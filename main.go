@@ -1,11 +1,11 @@
 package main
 
 import (
-	"html/template"
 	"io"
 	"log/slog"
 	"net/http"
 	"os"
+	"text/template"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -37,10 +37,15 @@ func newTemplate(templates *template.Template) echo.Renderer {
 	}
 }
 
-func home(board *board.Board) echo.HandlerFunc {
-	return func(c echo.Context) error {
+type HomeTemplateData struct {
+	Colors [][]string
+}
 
-		return c.Render(http.StatusOK, "index", struct{}{})
+func home(b *board.Board) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		colors := b.Colors()
+		data := HomeTemplateData{colors}
+		return c.Render(http.StatusOK, "index", data)
 	}
 }
 
@@ -57,7 +62,7 @@ func main() {
 	e.Static("static/js", "static/js")
 	NewTemplateRenderer(e, "static/*.html")
 
-	board := &board.Board{}
+	board := &board.Board{Squares: [][]int{{0, 1}, {0, 1}}}
 	e.GET("/", home(board))
 	e.Logger.Fatal(e.Start(":8000"))
 }
