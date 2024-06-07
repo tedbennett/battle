@@ -13,6 +13,7 @@ import (
 	"github.com/tedbennett/battles/templates"
 )
 
+//go:generate npm run build
 func main() {
 	e := echo.New()
 	e.Pre(middleware.RemoveTrailingSlash())
