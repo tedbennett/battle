@@ -27,7 +27,8 @@ func main() {
 	e.Static("static/js", "static/js")
 	templates.NewTemplateRenderer(e, "static/*.html")
 
-	board := board.NewBoard(20, 0) 
+	board := board.NewBoard(20, 0)
 	e.GET("/", routes.Home(&board))
+	e.GET("/ws", routes.WebSocket)
 	e.Logger.Fatal(e.Start(":8000"))
 }
