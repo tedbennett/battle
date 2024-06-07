@@ -7,6 +7,18 @@ import (
 	"github.com/tedbennett/battles/board"
 )
 
+func TestNewBoard(t *testing.T) {
+	squares := [][]int{
+		{board.Team1, board.Team1},
+		{board.Team1, board.Team1},
+	}
+	expected := board.Board{Squares: squares}
+
+	newBoard := board.NewBoard(2, board.Team1)
+
+	Assert(t, reflect.DeepEqual(newBoard, expected), "failed to construct default board correctly")
+}
+
 func TestTeamToColor(t *testing.T) {
 	squares := [][]int{
 		{board.Team1, board.Team1},

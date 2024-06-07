@@ -5,6 +5,7 @@ type Board struct {
 	Squares [][]int
 }
 
+// These will be dynamic
 const (
 	Team1 = iota
 	Team2
@@ -23,6 +24,18 @@ func teamToColor(team int) string {
 		return Team2Color
 	}
 	return "000000"
+}
+
+func NewBoard(size int, element int) Board {
+	squares := make([][]int, size)
+	for i := range size {
+		row := make([]int, size)
+		for j := range size {
+			row[j] = element
+		}
+		squares[i] = row
+	}
+	return Board{Squares: squares}
 }
 
 func (b *Board) Colors() [][]string {
