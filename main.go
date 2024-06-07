@@ -27,7 +27,7 @@ func main() {
 	e.Static("static/js", "static/js")
 	templates.NewTemplateRenderer(e, "static/*.html")
 
-	board := &board.Board{Squares: [][]int{{0, 1}, {0, 1}}}
-	e.GET("/", routes.Home(board))
+	board := board.NewBoard(20, 0) 
+	e.GET("/", routes.Home(&board))
 	e.Logger.Fatal(e.Start(":8000"))
 }
