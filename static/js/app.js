@@ -5,7 +5,6 @@ import { Board } from "./board.js"
 */
 function app(el) {
 	const board = new Board()
-	board.metadata = { colors: ["#ff0000", "#00ff00", "#0000ff"] }
 	const ws = new Stream("ws://localhost:8000/ws", (data) => {
 		const msg = JSON.parse(data)
 		board.handleMessage(msg)

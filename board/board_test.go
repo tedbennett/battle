@@ -4,11 +4,12 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/tedbennett/battles/assert"
 	"github.com/tedbennett/battles/board"
 )
 
 func TestNewBoard(t *testing.T) {
-	squares := [][]int{
+	squares := [][]int8{
 		{board.Team1, board.Team1},
 		{board.Team1, board.Team1},
 	}
@@ -16,11 +17,11 @@ func TestNewBoard(t *testing.T) {
 
 	newBoard := board.NewBoard(2, board.Team1)
 
-	Assert(t, reflect.DeepEqual(newBoard, expected), "failed to construct default board correctly")
+	assert.TestAssert(t, reflect.DeepEqual(newBoard, expected), "failed to construct default board correctly")
 }
 
 func TestTeamToColor(t *testing.T) {
-	squares := [][]int{
+	squares := [][]int8{
 		{board.Team1, board.Team1},
 		{board.Team1, board.Team2},
 	}
@@ -33,12 +34,6 @@ func TestTeamToColor(t *testing.T) {
 		{board.Team1Color, board.Team2Color},
 	}
 
-	Assert(t, reflect.DeepEqual(colors, expected), "failed to convert teams to colors")
+	assert.TestAssert(t, reflect.DeepEqual(colors, expected), "failed to convert teams to colors")
 
-}
-
-func Assert(t *testing.T, truthy bool, message string) {
-	if !truthy {
-		t.Fatalf(message)
-	}
 }

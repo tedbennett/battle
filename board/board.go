@@ -4,12 +4,12 @@ import "math/rand/v2"
 
 // Board represents which squares are taken by which side
 type Board struct {
-	Squares [][]int
+	Squares [][]int8
 }
 
 // These will be dynamic
 const (
-	Team1 = iota
+	Team1 int8 = iota
 	Team2
 )
 
@@ -18,10 +18,10 @@ const (
 	Team2Color = "#eeafaf"
 )
 
-func NewBoard(size int, element int) Board {
-	squares := make([][]int, size)
+func NewBoard(size int, element int8) Board {
+	squares := make([][]int8, size)
 	for i := range size {
-		row := make([]int, size)
+		row := make([]int8, size)
 		for j := range size {
 			row[j] = element
 		}
@@ -46,7 +46,7 @@ func (b *Board) Colors() [][]string {
 	return colors
 }
 
-func teamToColor(team int) string {
+func teamToColor(team int8) string {
 	switch team {
 	case Team1:
 		return Team1Color
@@ -84,8 +84,8 @@ func (b *Board) Tick() {
 	}
 }
 
-func (b *Board) getNeighbours(row int, col int) int {
-	count := 0
+func (b *Board) getNeighbours(row int, col int) int8 {
+	var count int8 = 0
 	if row != 0 {
 		count += b.Squares[row-1][col]
 	}

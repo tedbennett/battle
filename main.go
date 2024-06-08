@@ -42,7 +42,7 @@ func main() {
 			b.Tick()
 			e.Logger.Info("Sending board message")
 			msg := messages.NewBoardMessage(b.Squares)
-			json, _ := json.Marshal(msg)
+			json, _ := msg.Marshal()
 			channel <- json
 		}
 	}(channel)
