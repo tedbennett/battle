@@ -5,3 +5,10 @@ export type Board = {
 export type BoardMetadata = {
 	colors: Record<number, string>
 }
+
+export type Message = {
+	type: number,
+	board?: number[][],
+	colors?: Record<number, string>
+}
+

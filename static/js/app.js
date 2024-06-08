@@ -1,34 +1,18 @@
 import { Stream } from "./ws/util.js"
+import { Board } from "./board.js"
 /**
 * @param el {HTMLElement}
 */
 function app(el) {
 	const board = new Board()
+	board.metadata = { colors: ["#ff0000", "#00ff00", "#0000ff"] }
 	const ws = new Stream("ws://localhost:8000/ws", (data) => {
-		console.log("Received message: ", data)
+		const msg = JSON.parse(data)
+		board.handleMessage(msg)
+		board.draw()
 	})
 
 }
 
-class Board {
-	/** @type {import("./types").BoardMetadata} */
-	metadata
-
-	/** @type {int[][]} */
-	squares
-
-	constructor() {
-		this.metadata = {
-			colors: {}
-		}
-	}
-
-	to
-
-	draw() {
-		const parent = document.getElementById("board")
-		assert(parent !== null, "Failed to find board element")
-	}
-}
 
 window.onload = app
