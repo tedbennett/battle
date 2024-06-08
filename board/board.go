@@ -12,8 +12,8 @@ const (
 )
 
 const (
-	Team1Color = "afeeee"
-	Team2Color = "eeafaf"
+	Team1Color = "#afeeee"
+	Team2Color = "#eeafaf"
 )
 
 func teamToColor(team int) string {

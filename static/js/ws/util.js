@@ -34,8 +34,9 @@ export class Stream {
 			this.state = StreamState.closed
 		}
 
-		this.ws.onmessage = (event) => {
-			this.#handleMessage(event.data)
+		this.ws.onmessage = async (event) => {
+			const text = await event.data.text();
+			this.#handleMessage(text)
 		}
 
 		this.ws.onerror = () => {
