@@ -14,7 +14,7 @@ export class Stream {
 
 	/** 
 	 * @param {string} url 
-	 * @param {(any) => void} handleMessage
+	 * @param {(b: Uint8Array) => void} handleMessage
 	 * */
 	constructor(url, handleMessage) {
 		this.#url = url
@@ -25,6 +25,7 @@ export class Stream {
 
 	connect() {
 		this.ws = new WebSocket(this.#url)
+		this.ws.binaryType = "arraybuffer"
 		this.state = StreamState.connecting
 		this.ws.onopen = () => {
 			this.state = StreamState.connected
@@ -35,8 +36,7 @@ export class Stream {
 		}
 
 		this.ws.onmessage = async (event) => {
-			const text = await event.data.text();
-			this.#handleMessage(text)
+			this.#handleMessage(new Uint8Array(event.data))
 		}
 
 		this.ws.onerror = () => {
