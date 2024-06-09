@@ -1,7 +1,8 @@
 import { assert } from "./utils.js"
 
-const INIT_MSG = 0
-const BOARD_MSG = 1
+export const INIT_MSG = 0
+export const BOARD_MSG = 1
+export const PARTIAL_MSG = 2
 
 export class Board {
 	/** @type {import("./types").BoardMetadata} */
@@ -13,13 +14,37 @@ export class Board {
 	/** @type {number} */
 	#size
 
+	#element
+
 	constructor() {
+		const parent = document.getElementById("board")
+		assert(parent !== null, "Failed to find board element")
+		assert(parent.children.length !== 0, "Board element is empty")
+		this.#element = parent
 		this.#metadata = {
 			colors: {}
 		}
+		this.#size = parent.children.length
 	}
 
 	draw() {
+		if (!this.#squares) return
+		const parent = this.#element
+		// Otherwise, diff the board and update only those that have changed
+		for (let i = 0; i < parent.children.length; ++i) {
+			const row = parent.children[i]
+			for (let j = 0; j < row.children.length; ++j) {
+				const div = row.children[j]
+				const square = this.#squares[this.#index(i, j)]
+				const color = this.#metadata.colors[square]
+				if (div.style.backgroundColor !== color) {
+					div.style.backgroundColor = color
+				}
+			}
+		}
+	}
+
+	redrawBoard() {
 		if (!this.#squares) return;
 		const parent = document.getElementById("board")
 		assert(parent !== null, "Failed to find board element")
@@ -80,10 +105,13 @@ export class Board {
 	handleMessage(msg) {
 		switch (msg.type) {
 			case INIT_MSG: {
-				this.#onColorsChange(msg.colors)
+				this.#onInit(msg.colors, msg.board)
 			}
 			case BOARD_MSG: {
-				this.#onBoardChange(msg.board)
+				// Pass
+			}
+			case PARTIAL_MSG: {
+				this.#onDiffsReceived(msg.diffs)
 			}
 		}
 
@@ -98,15 +126,20 @@ export class Board {
 		return (this.#size * i) + j
 	}
 
-	/** @param {Object.<number, string>} */
-	#onColorsChange(colors) {
+	/** @param {Object.<number, string>}
+	* @param {number[][]} squares */
+	#onInit(colors, squares) {
 		this.#metadata.colors = colors
-	}
-
-	/** @param {number[][]} squares */
-	#onBoardChange(squares) {
 		this.#size = Math.sqrt(squares.length)
 		this.#squares = squares
 	}
+
+	/** @param {import('./types.js').Diff[]} diffs */
+	#onDiffsReceived(diffs) {
+		for (const diff of diffs) {
+			this.#squares[this.#index(diff.row, diff.col)] = diff.team
+		}
+	}
+
 
 }

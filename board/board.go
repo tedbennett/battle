@@ -1,15 +1,17 @@
 package board
 
-import "math/rand/v2"
+import (
+	"math/rand/v2"
+)
 
 // Board represents which squares are taken by which side
 type Board struct {
-	Squares [][]int8
+	Squares [][]int
 }
 
 // These will be dynamic
 const (
-	Team1 int8 = iota
+	Team1 int = iota
 	Team2
 )
 
@@ -18,10 +20,10 @@ const (
 	Team2Color = "#eeafaf"
 )
 
-func NewBoard(size int, element int8) Board {
-	squares := make([][]int8, size)
+func NewBoard(size int, element int) Board {
+	squares := make([][]int, size)
 	for i := range size {
-		row := make([]int8, size)
+		row := make([]int, size)
 		for j := range size {
 			row[j] = element
 		}
@@ -46,7 +48,7 @@ func (b *Board) Colors() [][]string {
 	return colors
 }
 
-func teamToColor(team int8) string {
+func teamToColor(team int) string {
 	switch team {
 	case Team1:
 		return Team1Color
@@ -54,6 +56,41 @@ func teamToColor(team int8) string {
 		return Team2Color
 	}
 	return "000000"
+}
+
+// ========================================================
+// Moving bar
+// ========================================================
+
+func NewBarBoard(size int) Board {
+	b := NewBoard(size, Team1)
+	for i := range size {
+		b.Squares[0][i] = Team2
+	}
+	return b
+}
+
+func (b *Board) TickBar() []Diff {
+	diffs := make([]Diff, 0)
+	for rowIdx, row := range b.Squares {
+		if row[0] == Team2 {
+			// Wipe prev
+			for colIdx := range len(row) {
+				b.Squares[rowIdx][colIdx] = Team1
+				diffs = append(diffs, Diff{rowIdx, colIdx, Team1})
+			}
+			newRow := rowIdx + 1
+			if rowIdx == len(row)-1 {
+				newRow = 0
+			}
+			for colIdx := range len(row) {
+				b.Squares[newRow][colIdx] = Team2
+				diffs = append(diffs, Diff{newRow, colIdx, Team2})
+			}
+			break
+		}
+	}
+	return diffs
 }
 
 // ========================================================
@@ -69,23 +106,31 @@ func NewConwayBoard(size int) Board {
 	return b
 }
 
-func (b *Board) Tick() {
+type Diff struct {
+	Row, Col, Team int
+}
+
+func (b *Board) Tick() []Diff {
+	diffs := make([]Diff, 0)
 	for rowIdx, row := range b.Squares {
 		for colIdx, col := range row {
 			neighbours := b.getNeighbours(rowIdx, colIdx)
 			if col == 1 {
 				if neighbours > 3 || neighbours < 2 {
-					b.Squares[rowIdx][colIdx] = 0
+					b.Squares[rowIdx][colIdx] = Team1
+					diffs = append(diffs, Diff{rowIdx, colIdx, Team1})
 				}
 			} else if neighbours == 3 {
-				b.Squares[rowIdx][colIdx] = 1
+				b.Squares[rowIdx][colIdx] = Team2
+				diffs = append(diffs, Diff{rowIdx, colIdx, Team2})
 			}
 		}
 	}
+	return diffs
 }
 
-func (b *Board) getNeighbours(row int, col int) int8 {
-	var count int8 = 0
+func (b *Board) getNeighbours(row int, col int) int {
+	var count int = 0
 	if row != 0 {
 		count += b.Squares[row-1][col]
 	}

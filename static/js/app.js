@@ -1,5 +1,5 @@
 import { Stream } from "./ws/util.js"
-import { Board } from "./board.js"
+import { Board, INIT_MSG, BOARD_MSG, PARTIAL_MSG } from "./board.js"
 import { assert } from "./utils.js"
 /**
 * @param el {HTMLElement}
@@ -15,10 +15,6 @@ function app(el) {
 }
 
 const VERSION = 1
-
-const INIT_MSG = 0
-const BOARD_MSG = 1
-const PARTIAL_MSG = 2
 
 /** 
 	* @param {Uint8Array} buf
@@ -41,9 +37,22 @@ function parseMessage(buf) {
 				}
 				colors[team] = color
 			}
+			const offset = 4 + len
+			const boardLen = read16(buf[offset], buf[offset + 1])
+			let board = []
+			// 2 bytes per count/char pair
+			for (let i = offset + 2; i < offset + boardLen + 2; i += 2) {
+				const count = buf[i]
+				const char = buf[i + 1]
+				for (let j = i; j < i + 2; ++j) {
+					assert(buf[j] <= 255, "parsed invalid rle encoded value")
+				}
+				board = board.concat(Array(count).fill(char))
+			}
 			return {
 				type: INIT_MSG,
 				colors,
+				board,
 			}
 		}
 		case BOARD_MSG: {
@@ -60,6 +69,24 @@ function parseMessage(buf) {
 			return {
 				type: BOARD_MSG,
 				board,
+			}
+		}
+		case PARTIAL_MSG: {
+			/** @returns {import("./types.js").Diff[]} */
+			let diffs = []
+			// 3 bytes per row/col/team set
+			for (let i = 4; i < len + 4; i += 3) {
+				const row = buf[i]
+				const col = buf[i + 1]
+				const team = buf[i + 2]
+				for (let j = i; j < i + 3; ++j) {
+					assert(buf[j] <= 255, "parsed invalid diff value")
+				}
+				diffs.push({ row, col, team })
+			}
+			return {
+				type: PARTIAL_MSG,
+				diffs,
 			}
 		}
 	}

@@ -72,12 +72,12 @@ func (m *Message) Debug() {
 }
 
 type InitMessage struct {
-	// Keep track of where we're writing, so we can pass this back in Len()
 	colors map[int]utils.Color
+	b      *board.Board
 }
 
-func NewInitMessage(c map[int]utils.Color) *InitMessage {
-	return &InitMessage{c}
+func NewInitMessage(c map[int]utils.Color, b *board.Board) *InitMessage {
+	return &InitMessage{c, b}
 }
 
 func (i *InitMessage) Type() byte {
@@ -89,7 +89,8 @@ const BYTES_PER_COLOR = 4
 func (i *InitMessage) Write(buf []byte) (int, error) {
 	// 4 bytes per team:color pair
 	n := len(i.colors) * BYTES_PER_COLOR
-	assert.Assert(len(buf) >= n+2, "buffer too small to write InitMessage")
+	encoded := RleEncode(i.b.Squares)
+	assert.Assert(len(buf) >= n+len(encoded)+4, "buffer too small to write InitMessage")
 	utils.Write16(buf, 0, n)
 	offset := 2
 
@@ -99,7 +100,10 @@ func (i *InitMessage) Write(buf []byte) (int, error) {
 		offset += BYTES_PER_COLOR
 	}
 
-	return n + 2, nil
+	utils.Write16(buf, n+2, len(encoded))
+	copy(buf[n+4:], encoded)
+
+	return n + len(encoded) + 4, nil
 }
 
 func (i *InitMessage) Debug(buf []byte) string {
@@ -110,11 +114,17 @@ func (i *InitMessage) Debug(buf []byte) string {
 		offset := i + 2
 		str.WriteString(fmt.Sprintf("Team %d: %s\n", int(buf[offset]), utils.DebugColor(buf[offset+1:offset+4])))
 	}
+
+	bLength := int(utils.Read16(buf, length+2))
+	str.WriteString(fmt.Sprintf("Len: %d\n", bLength))
+	// for i := 0; i < bLength; i += 2 {
+	// 	offset := length + i + 4
+	// 	str.WriteString(fmt.Sprintf("Count %d: Char %d\n", int(buf[offset]), int(buf[offset+1])))
+	// }
 	return str.String()
 }
 
 type BoardMessage struct {
-	// Keep track of where we're writing, so we can pass this back in Len()
 	board *board.Board
 }
 
@@ -145,9 +155,48 @@ func (i *BoardMessage) Debug(buf []byte) string {
 	return str.String()
 }
 
-func RleEncode(board [][]int8) []byte {
+type PartialMessage struct {
+	diffs []board.Diff
+}
+
+func NewPartialMessage(diffs []board.Diff) *PartialMessage {
+	return &PartialMessage{diffs}
+}
+
+func (i *PartialMessage) Type() byte {
+	return byte(PARTIAL_MSG)
+}
+
+const BYTES_PER_DIFF = 3
+
+func (i *PartialMessage) Write(buf []byte) (int, error) {
+	// Format of Row, Col, Team
+	n := len(i.diffs) * BYTES_PER_DIFF
+	assert.Assert(len(buf) >= n+2, "buffer too small to write PartialMessage")
+	utils.Write16(buf, 0, n)
+	for i, diff := range i.diffs {
+		offset := (i * BYTES_PER_DIFF) + 2
+		buf[offset] = byte(diff.Row)
+		buf[offset+1] = byte(diff.Col)
+		buf[offset+2] = byte(diff.Team)
+	}
+	return n + 2, nil
+}
+
+func (i *PartialMessage) Debug(buf []byte) string {
+	var str bytes.Buffer
+	length := int(utils.Read16(buf, 0))
+	str.WriteString(fmt.Sprintf("Len: %d\n", length))
+	for i := 0; i < length-2; i += BYTES_PER_DIFF {
+		offset := i + 2
+		str.WriteString(fmt.Sprintf("Row %d, Col %d, Team %d\n", int(buf[offset]), int(buf[offset+1]), int(buf[offset+2])))
+	}
+	return str.String()
+}
+
+func RleEncode(board [][]int) []byte {
 	assert.Assert(len(board) > 0, "unable to encode an empty board")
-	var current int8
+	var current int
 	var count uint8
 	buf := make([]byte, 0, len(board))
 	for _, row := range board {

@@ -30,26 +30,27 @@ func main() {
 	e.Static("static/js", "static/js")
 	templates.NewTemplateRenderer(e, "static/*.html")
 
-	b := board.NewConwayBoard(20)
+	b := board.NewBarBoard(20)
 	colors := map[int]utils.Color{
 		0: utils.ColorFromString(board.Team1Color),
 		1: utils.ColorFromString(board.Team2Color),
 	}
 
-	init := messages.NewInitMessage(colors)
-	initMsg := messages.NewMessage(255, init)
+	init := messages.NewInitMessage(colors, &b)
+	initMsg := messages.NewMessage(20, init)
+	initMsg.Debug()
 	channel := make(chan []byte)
 	go func(channel chan<- []byte) {
 		defer close(channel)
 		for {
 			time.Sleep(time.Millisecond * 500)
-			b.Tick()
+			diffs := b.TickBar()
 			e.Logger.Info("Sending board message")
-			msg := messages.NewMessage(102400, messages.NewBoardMessage(&b))
+			msg := messages.NewMessage(255, messages.NewPartialMessage(diffs))
 			channel <- msg.Bytes()
 		}
 	}(channel)
-	e.GET("/", routes.Home())
+	e.GET("/", routes.Home(&b))
 	e.GET("/ws", routes.WebSocket(channel, initMsg.Bytes()))
 	e.Logger.Fatal(e.Start(":8000"))
 }
