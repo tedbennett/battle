@@ -62,7 +62,7 @@ func teamToColor(team int8) string {
 
 func NewConwayBoard(size int) Board {
 	b := NewBoard(size, Team1)
-	for range size * 100 {
+	for range size {
 		row, col := rand.IntN(size), rand.IntN(size)
 		b.Squares[row][col] = Team2
 	}

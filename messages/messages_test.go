@@ -11,7 +11,7 @@ import (
 func TestRleEncode(t *testing.T) {
 	board := [][]int8{{0, 0, 0, 0}, {1, 1, 1, 1}, {1, 0, 0, 0}}
 
-	expected := []byte{byte(0), byte(4), byte(1), byte(5), byte(0), byte(3)}
+	expected := []byte{byte(4), byte(0), byte(5), byte(1), byte(3), byte(0)}
 	buf := messages.RleEncode(board)
 	t.Log(expected)
 	t.Log(buf)
@@ -29,7 +29,7 @@ func TestLongRleEncode(t *testing.T) {
 		board = append(board, row)
 	}
 
-	expected := []byte{byte(1), byte(255), byte(1), byte(1)}
+	expected := []byte{byte(255), byte(1), byte(1), byte(1)}
 	buf := messages.RleEncode(board)
 	t.Log(expected)
 	t.Log(buf)

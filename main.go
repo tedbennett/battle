@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"log/slog"
 	"os"
 	"time"
@@ -14,6 +13,7 @@ import (
 	"github.com/tedbennett/battles/messages"
 	"github.com/tedbennett/battles/routes"
 	"github.com/tedbennett/battles/templates"
+	"github.com/tedbennett/battles/utils"
 )
 
 //go:generate npm run build
@@ -30,10 +30,14 @@ func main() {
 	e.Static("static/js", "static/js")
 	templates.NewTemplateRenderer(e, "static/*.html")
 
-	b := board.NewConwayBoard(200)
-	colors := map[int]string{0: board.Team1Color, 1: board.Team2Color}
-	init := messages.NewInitMessage(colors, b.Squares)
-	initMsg, _ := json.Marshal(init)
+	b := board.NewConwayBoard(20)
+	colors := map[int]utils.Color{
+		0: utils.ColorFromString(board.Team1Color),
+		1: utils.ColorFromString(board.Team2Color),
+	}
+
+	init := messages.NewInitMessage(colors)
+	initMsg := messages.NewMessage(255, init)
 	channel := make(chan []byte)
 	go func(channel chan<- []byte) {
 		defer close(channel)
@@ -41,12 +45,11 @@ func main() {
 			time.Sleep(time.Millisecond * 500)
 			b.Tick()
 			e.Logger.Info("Sending board message")
-			msg := messages.NewBoardMessage(b.Squares)
-			json, _ := msg.Marshal()
-			channel <- json
+			msg := messages.NewMessage(102400, messages.NewBoardMessage(&b))
+			channel <- msg.Bytes()
 		}
 	}(channel)
 	e.GET("/", routes.Home())
-	e.GET("/ws", routes.WebSocket(channel, initMsg))
+	e.GET("/ws", routes.WebSocket(channel, initMsg.Bytes()))
 	e.Logger.Fatal(e.Start(":8000"))
 }
