@@ -37,8 +37,7 @@ func main() {
 	}
 
 	init := messages.NewInitMessage(colors, &b)
-	initMsg := messages.NewMessage(20, init)
-	initMsg.Debug()
+	initMsg := messages.NewMessage(init)
 	channel := make(chan []byte)
 	go func(channel chan<- []byte) {
 		defer close(channel)
@@ -46,7 +45,7 @@ func main() {
 			time.Sleep(time.Millisecond * 500)
 			diffs := b.TickBar()
 			e.Logger.Info("Sending board message")
-			msg := messages.NewMessage(255, messages.NewPartialMessage(diffs))
+			msg := messages.NewMessage(messages.NewPartialMessage(diffs))
 			channel <- msg.Bytes()
 		}
 	}(channel)

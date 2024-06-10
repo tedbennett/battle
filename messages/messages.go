@@ -25,18 +25,18 @@ const VERSION = 1
 
 type Payload interface {
 	Type() byte
-	Write(buf []byte) (int, error)
+	Write(buf *bytes.Buffer) (int, error)
 	Debug(buf []byte) string
 }
 
 type Message struct {
-	buf     []byte
+	buf     bytes.Buffer
 	Payload Payload
 }
 
-func NewMessage(size int, p Payload) *Message {
+func NewMessage(p Payload) *Message {
 	m := &Message{
-		buf:     make([]byte, size, size),
+		buf:     bytes.Buffer{},
 		Payload: p,
 	}
 	m.Write()
@@ -50,25 +50,25 @@ Header:
 | vers.  |  type  |  payload len    |
 +--------+--------+--------+--------+
 */
-func (m *Message) PackHeader(out []byte, offset int) {
-	assert.Assert(len(out) >= 4, "header buffer too short")
-	out[offset] = byte(VERSION)
-	out[offset+1] = byte(m.Payload.Type())
+func (m *Message) PackHeader(out *bytes.Buffer) {
+	out.WriteByte(VERSION)
+	out.WriteByte(byte(m.Payload.Type()))
 }
 
 func (m *Message) Write() error {
-	m.PackHeader(m.buf, 0)
-	m.Payload.Write(m.buf[2:])
+	m.PackHeader(&m.buf)
+	m.Payload.Write(&m.buf)
 	return nil
 }
 
 func (m *Message) Bytes() []byte {
-	return m.buf
+	return m.buf.Bytes()
 }
 
 func (m *Message) Debug() {
-	fmt.Printf("Version: %b, Type: %s\n", m.buf[0], MESSAGE_MAP[int(m.buf[1])])
-	fmt.Printf("Payload: %s", m.Payload.Debug(m.buf[2:]))
+	buf := m.buf.Bytes()
+	fmt.Printf("Version: %b, Type: %s\n", buf[0], MESSAGE_MAP[int(buf[1])])
+	fmt.Printf("Payload: %s", m.Payload.Debug(buf[2:]))
 }
 
 type InitMessage struct {
@@ -86,22 +86,23 @@ func (i *InitMessage) Type() byte {
 
 const BYTES_PER_COLOR = 4
 
-func (i *InitMessage) Write(buf []byte) (int, error) {
+func (i *InitMessage) Write(buf *bytes.Buffer) (int, error) {
 	// 4 bytes per team:color pair
 	n := len(i.colors) * BYTES_PER_COLOR
-	encoded := RleEncode(i.b.Squares)
-	assert.Assert(len(buf) >= n+len(encoded)+4, "buffer too small to write InitMessage")
-	utils.Write16(buf, 0, n)
-	offset := 2
+	buf.Write(utils.ToBytes16(n))
 
+	tmp := make([]byte, n)
+	idx := 0
 	for team, color := range i.colors {
-		buf[offset] = byte(team)
-		color.Write(buf[offset+1:])
-		offset += BYTES_PER_COLOR
+		tmp[idx] = byte(team)
+		color.Write(tmp[idx+1:])
+		idx += BYTES_PER_COLOR
 	}
+	buf.Write(tmp)
 
-	utils.Write16(buf, n+2, len(encoded))
-	copy(buf[n+4:], encoded)
+	encoded := RleEncode(i.b.Squares)
+	buf.Write(utils.ToBytes16(len(encoded)))
+	buf.Write(encoded)
 
 	return n + len(encoded) + 4, nil
 }
@@ -117,10 +118,10 @@ func (i *InitMessage) Debug(buf []byte) string {
 
 	bLength := int(utils.Read16(buf, length+2))
 	str.WriteString(fmt.Sprintf("Len: %d\n", bLength))
-	// for i := 0; i < bLength; i += 2 {
-	// 	offset := length + i + 4
-	// 	str.WriteString(fmt.Sprintf("Count %d: Char %d\n", int(buf[offset]), int(buf[offset+1])))
-	// }
+	for i := 0; i < bLength; i += 2 {
+		offset := length + i + 4
+		str.WriteString(fmt.Sprintf("Count %d: Char %d\n", int(buf[offset]), int(buf[offset+1])))
+	}
 	return str.String()
 }
 
@@ -169,17 +170,18 @@ func (i *PartialMessage) Type() byte {
 
 const BYTES_PER_DIFF = 3
 
-func (i *PartialMessage) Write(buf []byte) (int, error) {
+func (i *PartialMessage) Write(buf *bytes.Buffer) (int, error) {
 	// Format of Row, Col, Team
 	n := len(i.diffs) * BYTES_PER_DIFF
-	assert.Assert(len(buf) >= n+2, "buffer too small to write PartialMessage")
-	utils.Write16(buf, 0, n)
+	buf.Write(utils.ToBytes16(n))
+	tmp := make([]byte, n)
 	for i, diff := range i.diffs {
-		offset := (i * BYTES_PER_DIFF) + 2
-		buf[offset] = byte(diff.Row)
-		buf[offset+1] = byte(diff.Col)
-		buf[offset+2] = byte(diff.Team)
+		offset := (i * BYTES_PER_DIFF)
+		tmp[offset] = byte(diff.Row)
+		tmp[offset+1] = byte(diff.Col)
+		tmp[offset+2] = byte(diff.Team)
 	}
+	buf.Write(tmp)
 	return n + 2, nil
 }
 

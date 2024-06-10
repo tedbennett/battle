@@ -11,6 +11,12 @@ func Write16(buf []byte, offset, value int) {
 	buf[offset+1] = byte(lo)
 }
 
+func ToBytes16(value int) []byte {
+	buf := make([]byte, 2)
+	Write16(buf, 0, value)
+	return buf
+}
+
 func Read16(buf []byte, offset int) int {
 	assert.Assert(len(buf) > offset+1, "buffer too small to read 2 bytes")
 

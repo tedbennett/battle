@@ -106,12 +106,15 @@ export class Board {
 		switch (msg.type) {
 			case INIT_MSG: {
 				this.#onInit(msg.colors, msg.board)
+				break
 			}
 			case BOARD_MSG: {
 				// Pass
+				break
 			}
 			case PARTIAL_MSG: {
 				this.#onDiffsReceived(msg.diffs)
+				break
 			}
 		}
 
