@@ -72,12 +72,11 @@ func (m *Message) Debug() {
 }
 
 type InitMessage struct {
-	colors map[int]utils.Color
-	b      *board.Board
+	b *board.Board
 }
 
-func NewInitMessage(c map[int]utils.Color, b *board.Board) *InitMessage {
-	return &InitMessage{c, b}
+func NewInitMessage(b *board.Board) *InitMessage {
+	return &InitMessage{b}
 }
 
 func (i *InitMessage) Type() byte {
@@ -88,12 +87,12 @@ const BYTES_PER_COLOR = 4
 
 func (i *InitMessage) Write(buf *bytes.Buffer) (int, error) {
 	// 4 bytes per team:color pair
-	n := len(i.colors) * BYTES_PER_COLOR
+	n := len(i.b.Teams) * BYTES_PER_COLOR
 	buf.Write(utils.ToBytes16(n))
 
 	tmp := make([]byte, n)
 	idx := 0
-	for team, color := range i.colors {
+	for team, color := range i.b.Teams {
 		tmp[idx] = byte(team)
 		color.Write(tmp[idx+1:])
 		idx += BYTES_PER_COLOR

@@ -2,11 +2,14 @@ package board
 
 import (
 	"math/rand/v2"
+
+	"github.com/tedbennett/battles/utils"
 )
 
 // Board represents which squares are taken by which side
 type Board struct {
 	Squares [][]int
+	Teams   map[int]utils.Color
 }
 
 // These will be dynamic
@@ -20,7 +23,7 @@ const (
 	Team2Color = "#eeafaf"
 )
 
-func NewBoard(size int, element int) Board {
+func NewBoard(size int, element int, colors map[int]utils.Color) Board {
 	squares := make([][]int, size)
 	for i := range size {
 		row := make([]int, size)
@@ -29,7 +32,7 @@ func NewBoard(size int, element int) Board {
 		}
 		squares[i] = row
 	}
-	return Board{Squares: squares}
+	return Board{squares, colors}
 }
 
 // ========================================================
@@ -62,8 +65,8 @@ func teamToColor(team int) string {
 // Moving bar
 // ========================================================
 
-func NewBarBoard(size int) Board {
-	b := NewBoard(size, Team1)
+func NewBarBoard(size int, colors map[int]utils.Color) Board {
+	b := NewBoard(size, Team1, colors)
 	for i := range size {
 		b.Squares[0][i] = Team2
 	}
@@ -97,8 +100,8 @@ func (b *Board) TickBar() []Diff {
 // Conways game of life
 // ========================================================
 
-func NewConwayBoard(size int) Board {
-	b := NewBoard(size, Team1)
+func NewConwayBoard(size int, colors map[int]utils.Color) Board {
+	b := NewBoard(size, Team1, colors)
 	for range size {
 		row, col := rand.IntN(size), rand.IntN(size)
 		b.Squares[row][col] = Team2

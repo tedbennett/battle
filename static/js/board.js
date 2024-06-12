@@ -139,6 +139,7 @@ export class Board {
 
 	/** @param {import('./types.js').Diff[]} diffs */
 	#onDiffsReceived(diffs) {
+		if (!this.#squares) return
 		for (const diff of diffs) {
 			this.#squares[this.#index(diff.row, diff.col)] = diff.team
 		}
